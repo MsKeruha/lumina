@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+backend/venv/
+
+# Node / React
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+build/
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Оставляем .env (НЕ добавляем его сюда по твоей просьбе)
