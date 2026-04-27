@@ -4,6 +4,7 @@ import os
 import datetime
 from datetime import UTC
 import random
+import argparse
 
 # Add parent directory to path to import models and database
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -11,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.database import SessionLocal, engine, Base
 from app import models
 
-def seed_from_json():
+def seed_from_json(force=False):
     db = SessionLocal()
     
     json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "books.json")
@@ -23,16 +24,41 @@ def seed_from_json():
     with open(json_path, "r", encoding="utf-8") as f:
         books_data = json.load(f)
 
-    # Check if we already have books
-    existing_books_count = db.query(models.Book).count()
-    if existing_books_count > 0:
-        print("Database already has data. Skipping seeding to prevent overwriting your changes.")
-        db.close()
-        return
+    if force:
+        print("Force mode: refreshing books from JSON...")
+        titles = [b["title"] for b in books_data]
+        
+        # Delete discussions linked to these books first to avoid foreign key issues
+        books_to_delete = db.query(models.Book).filter(models.Book.title.in_(titles)).all()
+        book_ids = [b.id for b in books_to_delete]
+        
+        if book_ids:
+            # Delete comments in those discussions
+            db.query(models.Comment).filter(models.Comment.discussion_id.in_(
+                db.query(models.Discussion.id).filter(models.Discussion.book_id.in_(book_ids))
+            )).delete(synchronize_session=False)
+            
+            db.query(models.Discussion).filter(models.Discussion.book_id.in_(book_ids)).delete(synchronize_session=False)
+            db.query(models.Book).filter(models.Book.id.in_(book_ids)).delete(synchronize_session=False)
+            db.commit()
+            print(f"Removed {len(book_ids)} existing books (and their discussions/comments) to re-seed.")
+    else:
+        # Check if we already have books
+        existing_books_count = db.query(models.Book).count()
+        if existing_books_count > 0:
+            print("Database already has data. Skipping seeding to prevent overwriting your changes.")
+            print("Hint: Use --force to refresh books that are present in books.json")
+            db.close()
+            return
 
     print(f"Seeding {len(books_data)} books...")
     db_books = []
     for b in books_data:
+        # Extra safety: check if book exists again
+        existing = db.query(models.Book).filter(models.Book.title == b["title"]).first()
+        if existing:
+            continue
+            
         book = models.Book(
             title=b["title"],
             author=b["author"],
@@ -66,7 +92,7 @@ def seed_from_json():
             user = models.User(
                 username=username,
                 email=email,
-                hashed_password=get_password_hash("admin123"), # Set standard password for all seeded users
+                hashed_password=get_password_hash("admin123"),
                 avatar_url=avatar,
                 is_admin=1 if username == "admin" else 0,
                 bio=f"Привіт, я {username}! Люблю читати."
@@ -78,7 +104,7 @@ def seed_from_json():
         else:
             db_users.append(existing_user)
 
-    # Seed Clubs
+    # Seed Clubs (Check if they exist to avoid duplicates)
     clubs_data = [
         ("Клуб Опівнічних Читачів", "Клуб для тих, хто любить глибокі філософські дискусії."),
         ("Фантастичні Світи", "Обговорюємо найкращу наукову фантастику та фентезі.")
@@ -86,84 +112,58 @@ def seed_from_json():
     
     db_clubs = []
     for name, desc in clubs_data:
-        club = models.Club(name=name, description=desc, creator_id=db_users[0].id)
-        db_clubs.append(club)
-        db.add(club)
+        existing_club = db.query(models.Club).filter(models.Club.name == name).first()
+        if not existing_club:
+            club = models.Club(name=name, description=desc, creator_id=db_users[0].id)
+            db.add(club)
+            db.commit()
+            db.refresh(club)
+            db_clubs.append(club)
+            
+            # Add all users to new clubs
+            for u in db_users:
+                u.clubs.append(club)
+        else:
+            db_clubs.append(existing_club)
     
     db.commit()
-    for c in db_clubs:
-        db.refresh(c)
-        # Add all users to clubs
-        for u in db_users:
-            u.clubs.append(c)
-    db.commit()
 
-    # Seed Discussions
-    if len(db_books) >= 3 and len(db_clubs) >= 2:
-        # Discussion 1
-        disc1 = models.Discussion(
-            club_id=db_clubs[0].id,
-            book_id=db_books[0].id,
-            topic=f"Обговорення '{db_books[0].title}'",
-            scheduled_at=datetime.datetime.now(UTC)
-        )
-        db.add(disc1)
-        db.commit()
-        db.refresh(disc1)
-        
-        # Add comments to Discussion 1
-        comments_list1 = [
-            (db_users[1].id, "Це найкраща книга, яку я читав цього року!", 5),
-            (db_users[2].id, "Погоджуюсь, сюжет просто захоплює.", 25)
-        ]
-        for uid, content, minutes_ago in comments_list1:
-            comment = models.Comment(
-                discussion_id=disc1.id,
-                user_id=uid,
-                content=content,
-                created_at=datetime.datetime.now(UTC) - datetime.timedelta(minutes=minutes_ago)
-            )
-            db.add(comment)
+    # Seed Discussions (Only if we added new books or if discussions don't exist)
+    if len(db_books) > 0 and len(db_clubs) >= 2:
+        for i, book in enumerate(db_books[:3]):
+            club = db_clubs[i % 2]
+            existing_disc = db.query(models.Discussion).filter(
+                models.Discussion.book_id == book.id,
+                models.Discussion.club_id == club.id
+            ).first()
             
-        # Discussion 2
-        disc2 = models.Discussion(
-            club_id=db_clubs[1].id,
-            book_id=db_books[1].id,
-            topic=f"Чому '{db_books[1].title}' актуальна сьогодні?",
-            scheduled_at=datetime.datetime.now(UTC)
-        )
-        db.add(disc2)
-        db.commit()
-        db.refresh(disc2)
-        
-        db.add(models.Comment(
-            discussion_id=disc2.id,
-            user_id=db_users[2].id,
-            content="Світ Орвелла стає все більш реальним...",
-            created_at=datetime.datetime.now(UTC) - datetime.timedelta(minutes=45)
-        ))
-
-        # Discussion 3
-        disc3 = models.Discussion(
-            club_id=db_clubs[0].id,
-            book_id=db_books[2].id,
-            topic=f"Персонажі у '{db_books[2].title}'",
-            scheduled_at=datetime.datetime.now(UTC)
-        )
-        db.add(disc3)
-        db.commit()
-        db.refresh(disc3)
-
-        db.add(models.Comment(
-            discussion_id=disc3.id,
-            user_id=db_users[3].id,
-            content="Головний герой дуже суперечливий.",
-            created_at=datetime.datetime.now(UTC) - datetime.timedelta(hours=2)
-        ))
+            if not existing_disc:
+                disc = models.Discussion(
+                    club_id=club.id,
+                    book_id=book.id,
+                    topic=f"Обговорення '{book.title}'",
+                    scheduled_at=datetime.datetime.now(UTC)
+                )
+                db.add(disc)
+                db.commit()
+                db.refresh(disc)
+                
+                # Add a demo comment
+                comment = models.Comment(
+                    discussion_id=disc.id,
+                    user_id=db_users[random.randint(1, len(db_users)-1)].id,
+                    content="Цікава книга! Давайте обговоримо.",
+                    created_at=datetime.datetime.now(UTC)
+                )
+                db.add(comment)
 
     db.commit()
-    print("Seeding complete with real activity data!")
+    print("Seeding complete!")
     db.close()
 
 if __name__ == "__main__":
-    seed_from_json()
+    parser = argparse.ArgumentParser(description="Seed database from JSON")
+    parser.add_argument("--force", action="store_true", help="Delete and re-seed books matching JSON titles")
+    args = parser.parse_args()
+    
+    seed_from_json(force=args.force)
