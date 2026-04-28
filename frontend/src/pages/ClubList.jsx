@@ -12,7 +12,7 @@ const ClubList = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    fetch('http://localhost:8000/clubs')
+    fetch('/api/clubs')
       .then(res => res.json())
       .then(data => setClubs(data));
   }, []);
@@ -25,7 +25,7 @@ const ClubList = () => {
   const handleJoin = async (clubId) => {
     if (!user) return alert('Будь ласка, увійдіть, щоб приєднатися до клубу');
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:8000/clubs/${clubId}/join`, {
+    const res = await fetch(`/api/clubs/${clubId}/join`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -40,7 +40,7 @@ const ClubList = () => {
     if (!user) return alert('Увійдіть, щоб створити клуб');
     
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:8000/clubs`, {
+    const res = await fetch(`/api/clubs`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ const ClubList = () => {
       setShowCreateForm(false);
       setNewClubData({ name: '', description: '' });
       // Refresh clubs
-      const clubsRes = await fetch('http://localhost:8000/clubs');
+      const clubsRes = await fetch('/api/clubs');
       const clubsData = await clubsRes.json();
       setClubs(clubsData);
     }

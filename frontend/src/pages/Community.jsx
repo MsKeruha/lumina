@@ -11,10 +11,10 @@ const Community = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const statsRes = await fetch('http://localhost:8000/clubs/stats/summary');
+        const statsRes = await fetch('/api/clubs/stats/summary');
         const statsData = await statsRes.json();
         
-        const activityRes = await fetch('http://localhost:8000/clubs/community/activity');
+        const activityRes = await fetch('/api/clubs/community/activity');
         const activityData = await activityRes.json();
 
         setStats([

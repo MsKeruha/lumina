@@ -21,7 +21,7 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     const token = localStorage.getItem('token');
-    const res = await fetch('http://localhost:8000/admin/stats', {
+    const res = await fetch('/api/admin/stats', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) {
@@ -34,7 +34,7 @@ const AdminDashboard = () => {
   const handleAddBook = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    const res = await fetch('http://localhost:8000/admin/books', {
+    const res = await fetch('/api/admin/books', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',

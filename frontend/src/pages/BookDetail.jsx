@@ -11,7 +11,7 @@ const BookDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/books/${bookId}`)
+    fetch(`/api/books/${bookId}`)
       .then(res => res.json())
       .then(data => {
         setBook(data);
@@ -22,7 +22,7 @@ const BookDetail = () => {
         setLoading(false);
       });
 
-    fetch(`http://localhost:8000/books/${bookId}/discussions`)
+    fetch(`/api/books/${bookId}/discussions`)
       .then(res => res.json())
       .then(data => setDiscussions(data))
       .catch(err => console.error(err));

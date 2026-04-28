@@ -11,7 +11,7 @@ const MyClubs = () => {
   useEffect(() => {
     if (user) {
       const token = localStorage.getItem('token');
-      fetch('http://localhost:8000/users/me', {
+      fetch('/api/users/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.json())

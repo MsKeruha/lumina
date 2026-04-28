@@ -15,15 +15,15 @@ const ClubDetail = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    fetch(`http://localhost:8000/clubs/${clubId}`)
+    fetch(`/api/clubs/${clubId}`)
       .then(res => res.json())
       .then(data => setClub(data));
 
-    fetch(`http://localhost:8000/clubs/${clubId}/discussions`)
+    fetch(`/api/clubs/${clubId}/discussions`)
       .then(res => res.json())
       .then(data => setDiscussions(data));
 
-    fetch('http://localhost:8000/books')
+    fetch('/api/books')
       .then(res => res.json())
       .then(data => setBooks(data));
   }, [clubId]);
@@ -33,7 +33,7 @@ const ClubDetail = () => {
     if (!user) return alert('Увійдіть, щоб створити обговорення');
     
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:8000/clubs/${clubId}/discussions`, {
+    const res = await fetch(`/api/clubs/${clubId}/discussions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ const ClubDetail = () => {
       setShowCreateForm(false);
       setNewDiscData({ topic: '', book_id: '' });
       // Refresh discussions
-      const discRes = await fetch(`http://localhost:8000/clubs/${clubId}/discussions`);
+      const discRes = await fetch(`/api/clubs/${clubId}/discussions`);
       const discData = await discRes.json();
       setDiscussions(discData);
     }
@@ -63,7 +63,7 @@ const ClubDetail = () => {
     if (!content) return;
 
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:8000/discussions/${discussionId}/comments`, {
+    const res = await fetch(`/api/discussions/${discussionId}/comments`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ const ClubDetail = () => {
     if (res.ok) {
       setNewComment({ ...newComment, [discussionId]: '' });
       // Refresh discussions to show new comment
-      const discRes = await fetch(`http://localhost:8000/clubs/${clubId}/discussions`);
+      const discRes = await fetch(`/api/clubs/${clubId}/discussions`);
       const discData = await discRes.json();
       setDiscussions(discData);
     }
