@@ -20,15 +20,14 @@ echo ==========================================
 
 echo [1/6] Detecting dependencies...
 
-:: 1. Try to find PostgreSQL via Registry (smarter parsing)
+:: 1. Try to find PostgreSQL via Registry
 set "PG_REG_KEY=HKEY_LOCAL_MACHINE\SOFTWARE\PostgreSQL\Installations"
 for /f "tokens=2*" %%a in ('reg query "%PG_REG_KEY%" /s /v "Base Directory" 2^>nul ^| findstr "Base Directory"') do (
     set "RAW_VAL=%%b"
     set "PG_DIR=!RAW_VAL:*REG_SZ=!"
     for /f "tokens=* " %%i in ("!PG_DIR!") do set "PG_DIR=%%i"
-    
     if defined PG_DIR (
-        echo [+] Found PostgreSQL in registry: !PG_DIR!
+        echo [DEBUG] Found PostgreSQL in registry: !PG_DIR!
         set "PATH=!PATH!;!PG_DIR!\bin"
     )
 )
@@ -36,7 +35,7 @@ for /f "tokens=2*" %%a in ('reg query "%PG_REG_KEY%" /s /v "Base Directory" 2^>n
 :: 2. Check PostgreSQL
 psql --version >nul 2>nul
 if %ERRORLEVEL% neq 0 (
-    echo [!] PostgreSQL not found in PATH. Checking winget...
+    echo [!] PostgreSQL not found. Checking winget...
     call winget install -e --id PostgreSQL.PostgreSQL.15 --silent --accept-package-agreements --accept-source-agreements
 ) else (
     echo [+] PostgreSQL is detected.
@@ -60,20 +59,30 @@ if %ERRORLEVEL% neq 0 (
     echo [+] Node.js is detected.
 )
 
+set "PATH=%PATH%;C:\Windows\System32;C:\Windows"
+
 echo [2/6] Setting up Backend...
 cd /d "%PROJECT_ROOT%backend"
-if exist venv (
-    echo Refreshing virtual environment for Python 3.11...
-    rmdir /s /q venv
-)
-echo Creating virtual environment (Python 3.11)...
-echo This may take a minute, please wait...
-call py -3.11 -m venv venv
 
-echo Installing Python requirements...
-call venv\Scripts\activate
-call python -m pip install --upgrade pip
-call python -m pip install -r requirements.txt
+set "NEED_VENV=1"
+if exist venv (
+    venv\Scripts\python --version 2>nul | findstr "3.11" >nul
+    if !ERRORLEVEL! equ 0 (
+        echo [+] Existing venv (Python 3.11) detected. Skipping creation.
+        set "NEED_VENV=0"
+    ) else (
+        echo [!] Existing venv is NOT Python 3.11. Recreating...
+        rmdir /s /q venv
+    )
+)
+
+if !NEED_VENV! equ 1 (
+    echo Creating virtual environment (Python 3.11)...
+    call py -3.11 -m venv venv
+    call venv\Scripts\activate
+    call python -m pip install --upgrade pip
+    call python -m pip install -r requirements.txt
+)
 
 echo [3/6] Configuring Database...
 set "PGPASSWORD=postgres"
@@ -83,7 +92,6 @@ if exist ..\.env (
 set PGPASSWORD=%PGPASSWORD: =%
 set PGPASSWORD=%PGPASSWORD:"=%
 
-echo Testing connection to PostgreSQL (127.0.0.1)...
 call psql -U postgres -h 127.0.0.1 -p 5432 -c "SELECT 1" >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Could not connect to PostgreSQL.
@@ -91,21 +99,26 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-echo Checking if database 'lumina' exists...
 call psql -U postgres -h 127.0.0.1 -p 5432 -lqt | findstr /C:"lumina" >nul
 if %ERRORLEVEL% neq 0 (
     echo Creating database 'lumina'...
     call createdb -U postgres -h 127.0.0.1 -p 5432 lumina
+    echo [4/6] Running Migrations and Seeding...
+    call venv\Scripts\activate
+    call alembic upgrade head
+    call python scripts/seed.py
+) else (
+    echo [+] Database 'lumina' already exists.
 )
-
-echo [4/6] Running Migrations and Seeding...
-call alembic upgrade head
-call python scripts/seed.py
 
 echo [5/6] Setting up Frontend...
 cd /d "%PROJECT_ROOT%frontend"
-echo Installing npm packages...
-call npm install --legacy-peer-deps
+if not exist node_modules (
+    echo Installing npm packages...
+    call npm install --legacy-peer-deps
+) else (
+    echo [+] node_modules detected. Skipping npm install.
+)
 
 echo [6/6] Launching Application...
 echo.
