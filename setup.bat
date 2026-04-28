@@ -15,18 +15,18 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo ==========================================
-echo Lumina Local Setup ^& Run Script
+echo Lumina Local Setup ^& Run Script (Python 3.11)
 echo ==========================================
 
 echo [1/6] Checking dependencies...
 
-:: Install Python
-python --version >nul 2>nul
+:: Install Python 3.11 specifically
+py -3.11 --version >nul 2>nul
 if %ERRORLEVEL% neq 0 (
-    echo Installing Python via winget...
+    echo Installing Python 3.11 via winget...
     call winget install -e --id Python.Python.3.11 --silent --accept-package-agreements --accept-source-agreements
 ) else (
-    echo Python is already installed.
+    echo Python 3.11 is already installed.
 )
 
 :: Install Node.js
@@ -34,28 +34,26 @@ node --version >nul 2>nul
 if %ERRORLEVEL% neq 0 (
     echo Installing Node.js via winget...
     call winget install -e --id OpenJS.NodeJS.LTS --silent --accept-package-agreements --accept-source-agreements
-) else (
-    echo Node.js is already installed.
 )
 
 :: Install PostgreSQL
 psql --version >nul 2>nul
 if %ERRORLEVEL% neq 0 (
-    echo Installing PostgreSQL 15 via winget...
+    echo Installing PostgreSQL 15...
     call winget install -e --id PostgreSQL.PostgreSQL.15 --silent --accept-package-agreements --accept-source-agreements
-) else (
-    echo PostgreSQL is already installed.
 )
 
 :: Refresh Path
-set "PATH=%PATH%;C:\Program Files\PostgreSQL\15\bin;C:\Program Files\Python311;C:\Program Files\nodejs"
+set "PATH=%PATH%;C:\Program Files\PostgreSQL\15\bin;C:\Windows"
 
 echo [2/6] Setting up Backend...
 cd /d "%PROJECT_ROOT%backend"
-if not exist venv (
-    echo Creating virtual environment...
-    call python -m venv venv
+if exist venv (
+    echo Refreshing virtual environment for Python 3.11...
+    rmdir /s /q venv
 )
+echo Creating virtual environment (Python 3.11)...
+call py -3.11 -m venv venv
 
 echo Installing Python requirements...
 call venv\Scripts\activate
@@ -71,31 +69,24 @@ set PGPASSWORD=%PGPASSWORD: =%
 set PGPASSWORD=%PGPASSWORD:"=%
 
 echo Checking if database 'lumina' exists...
-call psql -U postgres -h localhost -p 5432 -lqt | findstr /C:"lumina" >nul
+call psql -U postgres -h 127.0.0.1 -p 5432 -lqt | findstr /C:"lumina" >nul
 if %ERRORLEVEL% neq 0 (
     echo Creating database 'lumina'...
-    call createdb -U postgres -h localhost -p 5432 lumina
-) else (
-    echo Database 'lumina' already exists.
+    call createdb -U postgres -h 127.0.0.1 -p 5432 lumina
 )
 
 echo [4/6] Running Migrations and Seeding...
-echo Applying migrations (alembic)...
 call alembic upgrade head
-echo Seeding data...
 call python scripts/seed.py
 
 echo [5/6] Setting up Frontend...
 cd /d "%PROJECT_ROOT%frontend"
 echo Installing npm packages...
-call npm install
+call npm install --legacy-peer-deps
 
 echo [6/6] Launching Application...
 echo.
-echo Starting Backend in a new window...
 start "Lumina Backend" cmd /k "cd /d "%PROJECT_ROOT%backend" && venv\Scripts\activate && uvicorn app.main:app --reload --port 8000"
-
-echo Starting Frontend...
 call npm run dev
 
 pause
