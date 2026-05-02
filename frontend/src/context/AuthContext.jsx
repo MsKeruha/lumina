@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { API_URL } from '../config';
 
 const AuthContext = createContext(null);
 
@@ -9,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch('/api/users/me', {
+      fetch(`${API_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.ok ? res.json() : null)
@@ -31,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     formData.append('username', username);
     formData.append('password', password);
 
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       body: formData,
     });
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       const { access_token } = await res.json();
       localStorage.setItem('token', access_token);
       
-      const userRes = await fetch('/api/users/me', {
+      const userRes = await fetch(`${API_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${access_token}` }
       });
       const userData = await userRes.json();
@@ -56,7 +57,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (username, email, password) => {
-    const res = await fetch('/api/auth/register', {
+    const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password }),
@@ -66,7 +67,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = async (updateData) => {
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/users/me', {
+    const res = await fetch(`${API_URL}/users/me`, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',
