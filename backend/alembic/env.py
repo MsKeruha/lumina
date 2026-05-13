@@ -30,6 +30,12 @@ DB_NAME = os.getenv("DB_NAME", "lumina")
 database_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?client_encoding=utf8"
 config.set_main_option("sqlalchemy.url", database_url)
 
+# Fix psycopg2 / libpq UnicodeDecodeError on Windows when username contains non-ASCII (Cyrillic) chars.
+import sys
+if sys.platform.startswith("win"):
+    os.environ["PGPASSFILE"] = "C:\\Users\\Public\\pgpass_dummy.conf"
+    os.environ["PGSERVICEFILE"] = "C:\\Users\\Public\\pgservice_dummy.conf"
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 from app.models import Base

@@ -1,11 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import auth, books, clubs, users, admin, discussions
-from .database import engine, Base
-
-# Create tables if they don't exist (useful for simple setups, 
-# though Alembic is preferred for production)
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Lumina Reading Club API",
