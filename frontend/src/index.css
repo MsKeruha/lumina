@@ -292,3 +292,23 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
 }
+
+.hover-underline {
+  transition: color 0.2s;
+}
+
+.hover-underline:hover {
+  color: var(--accent) !important;
+}
+
+a:hover .hover-underline {
+  color: var(--accent);
+}
+
+a[href^="/users/"] {
+  transition: transform 0.2s ease;
+}
+
+a[href^="/users/"]:hover {
+  transform: scale(1.02);
+}

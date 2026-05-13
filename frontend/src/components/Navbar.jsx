@@ -1,11 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BookOpen, Search, LogOut, User as UserIcon, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/discover?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
 
   return (
     <nav className="glass-nav">
@@ -19,10 +29,40 @@ const Navbar = () => {
         <Link to="/discover" className={`nav-link ${location.pathname === '/discover' ? 'active' : ''}`}>Дослідити</Link>
         <Link to="/my-clubs" className={`nav-link ${location.pathname === '/my-clubs' ? 'active' : ''}`}>Мої Клуби</Link>
         <Link to="/community" className={`nav-link ${location.pathname === '/community' ? 'active' : ''}`}>Спільнота</Link>
+        <Link to="/tech" className={`nav-link ${location.pathname === '/tech' ? 'active' : ''}`}>Алгоритми</Link>
       </div>
 
-      <div className="nav-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <Search className="nav-link" size={20} />
+      <div className="nav-actions" style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+          <input 
+             type="text" 
+             placeholder="Шукати книгу..." 
+             value={searchQuery} 
+             onChange={(e) => setSearchQuery(e.target.value)} 
+             style={{
+               background: 'rgba(255,255,255,0.04)',
+               border: '1px solid var(--glass-border)',
+               borderRadius: '99px',
+               padding: '0.45rem 1rem 0.45rem 2.2rem',
+               color: 'white',
+               fontSize: '0.85rem',
+               width: '160px',
+               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+               outline: 'none'
+             }}
+             onFocus={(e) => {
+               e.target.style.width = '220px';
+               e.target.style.borderColor = 'var(--accent)';
+               e.target.style.background = 'rgba(255,255,255,0.07)';
+             }}
+             onBlur={(e) => {
+               e.target.style.width = '160px';
+               e.target.style.borderColor = 'var(--glass-border)';
+               e.target.style.background = 'rgba(255,255,255,0.04)';
+             }}
+          />
+          <Search style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} size={15} />
+        </form>
         
         {user ? (
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>

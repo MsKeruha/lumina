@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { MessageCircle, Trophy, TrendingUp, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
 
 const Community = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,9 +106,10 @@ const Community = () => {
             <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><MessageCircle size={20} className="accent" /> Бери участь у живих дискусіях</li>
             <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Trophy size={20} className="accent" /> Отримуй нагороди за активність</li>
           </ul>
-          <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+          <Link to={user ? '/clubs' : '/register'} className="btn-primary" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
             Приєднатися зараз
-          </button>
+          </Link>
+
         </div>
       </div>
     </div>

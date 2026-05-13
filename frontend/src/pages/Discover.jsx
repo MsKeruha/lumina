@@ -2,12 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, Sparkles } from 'lucide-react';
 import BookCard from '../components/BookCard';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
+
+import CustomSelect from '../components/CustomSelect';
 
 const Discover = () => {
+  const [searchParams] = useSearchParams();
   const [books, setBooks] = useState([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('q') || '');
   const [category, setCategory] = useState('');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q !== null) {
+      setSearch(q);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -56,26 +67,18 @@ const Discover = () => {
             }} 
           />
         </div>
-        <select 
+        <CustomSelect 
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="glass"
-          style={{ 
-            padding: '0 1.5rem', 
-            background: 'rgba(255,255,255,0.05)', 
-            border: '1px solid var(--glass-border)',
-            borderRadius: '16px',
-            color: 'white',
-            outline: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          <option value="" style={{ color: 'black' }}>Всі категорії</option>
-          <option value="Класика" style={{ color: 'black' }}>Класика</option>
-          <option value="Фантастика" style={{ color: 'black' }}>Фантастика</option>
-          <option value="Філософія" style={{ color: 'black' }}>Філософія</option>
-          <option value="Детектив" style={{ color: 'black' }}>Детектив</option>
-        </select>
+          onChange={setCategory}
+          options={[
+            { value: '', label: '📂 Всі категорії' },
+            { value: 'Класика', label: '📚 Класика' },
+            { value: 'Фантастика', label: '👾 Фантастика' },
+            { value: 'Філософія', label: '🧠 Філософія' },
+            { value: 'Детектив', label: '🔍 Детектив' }
+          ]}
+          style={{ width: '240px' }}
+        />
       </div>
 
       {loading ? (

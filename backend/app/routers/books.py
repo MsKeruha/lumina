@@ -27,3 +27,25 @@ def get_book(book_id: int, db: Session = Depends(database.get_db)):
 @router.get("/{book_id}/discussions", response_model=List[schemas.Discussion])
 def get_book_discussions(book_id: int, db: Session = Depends(database.get_db)):
     return db.query(models.Discussion).filter(models.Discussion.book_id == book_id).all()
+
+@router.get("/{book_id}/recommendations", response_model=List[schemas.Book])
+def get_book_recommendations(book_id: int, db: Session = Depends(database.get_db)):
+    # Get current book to know category
+    book = db.query(models.Book).filter(models.Book.id == book_id).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    
+    # Fetch top rated books in same category, excluding current book
+    recommendations = db.query(models.Book).filter(
+        models.Book.category == book.category,
+        models.Book.id != book_id
+    ).order_by(models.Book.rating.desc()).limit(4).all()
+    
+    # Fallback if there are no books in the same category: show overall top rated books excluding current
+    if not recommendations:
+        recommendations = db.query(models.Book).filter(
+            models.Book.id != book_id
+        ).order_by(models.Book.rating.desc()).limit(4).all()
+        
+    return recommendations
+

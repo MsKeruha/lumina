@@ -46,10 +46,7 @@ def seed_from_json(force=False):
         # Check if we already have books
         existing_books_count = db.query(models.Book).count()
         if existing_books_count > 0:
-            print("Database already has data. Skipping seeding to prevent overwriting your changes.")
-            print("Hint: Use --force to refresh books that are present in books.json")
-            db.close()
-            return
+            print("Database already has books. Skipping book insertion phase, but checking for new clubs and achievements...")
 
     print(f"Seeding {len(books_data)} books...")
     db_books = []
@@ -65,7 +62,8 @@ def seed_from_json(force=False):
             cover_url=b.get("cover_url") or "https://images.unsplash.com/photo-1543005139-059c1fb2a743?q=80&w=800",
             description=b["description"],
             rating=b["rating"],
-            category=b["category"]
+            category=b["category"],
+            pages=random.randint(240, 680)  # Генерация реалистичного количества страниц
         )
         db_books.append(book)
         db.add(book)
@@ -107,22 +105,33 @@ def seed_from_json(force=False):
     # Seed Clubs (Check if they exist to avoid duplicates)
     clubs_data = [
         ("Клуб Опівнічних Читачів", "Клуб для тих, хто любить глибокі філософські дискусії."),
-        ("Фантастичні Світи", "Обговорюємо найкращу наукову фантастику та фентезі.")
+        ("Фантастичні Світи", "Обговорюємо найкращу наукову фантастику та фентезі."),
+        ("Книжковий Детектив", "Любите загадки та розслідування? Вам сюди!"),
+        ("Класика Назавжди", "Вивчаємо світову класичну літературу разом."),
+        ("Сучасна Проза", "Обговорення бестселерів 21 століття."),
+        ("Психологія & Розвиток", "Книги про мотивацію, психологію та саморозвиток.")
     ]
     
     db_clubs = []
     for name, desc in clubs_data:
         existing_club = db.query(models.Club).filter(models.Club.name == name).first()
         if not existing_club:
-            club = models.Club(name=name, description=desc, creator_id=db_users[0].id)
+            # Assign random user as club owner
+            random_owner = db_users[random.randint(0, len(db_users) - 1)]
+            club = models.Club(name=name, description=desc, creator_id=random_owner.id)
             db.add(club)
             db.commit()
             db.refresh(club)
             db_clubs.append(club)
             
-            # Add all users to new clubs
-            for u in db_users:
-                u.clubs.append(club)
+            # Randomly assign only 2-3 members from total users
+            sampled = random.sample(db_users, k=min(len(db_users), random.randint(1, 3)))
+            if random_owner not in sampled:
+                sampled.append(random_owner)
+
+            for u in sampled:
+                if club not in u.clubs:
+                    u.clubs.append(club)
         else:
             db_clubs.append(existing_club)
     
@@ -156,6 +165,106 @@ def seed_from_json(force=False):
                     created_at=datetime.datetime.now(UTC)
                 )
                 db.add(comment)
+
+    # Seed Demo Reading Challenges
+    current_year = datetime.datetime.now().year
+    for user in db_users[:2]:
+        existing_challenge = db.query(models.ReadingChallenge).filter(
+            models.ReadingChallenge.user_id == user.id,
+            models.ReadingChallenge.year == current_year
+        ).first()
+        if not existing_challenge:
+            challenge = models.ReadingChallenge(
+                user_id=user.id,
+                year=current_year,
+                target_books=random.choice([12, 24, 36])
+            )
+            db.add(challenge)
+
+    # Seed Demo Poll in the primary club
+    if len(db_clubs) > 0:
+        active_club = db_clubs[0]
+        existing_poll = db.query(models.Poll).filter(
+            models.Poll.club_id == active_club.id,
+            models.Poll.is_active == 1
+        ).first()
+        
+        if not existing_poll:
+            poll = models.Poll(
+                club_id=active_club.id,
+                title="Яку книгу читаємо наступного місяця?",
+                is_active=1,
+                created_at=datetime.datetime.now(UTC)
+            )
+            db.add(poll)
+            db.commit()
+            db.refresh(poll)
+            
+            # Select books for voting
+            avail_books = db.query(models.Book).limit(5).all()
+            if len(avail_books) >= 3:
+                for b_cand in avail_books[1:4]: # 1984, Gatsby, Hobbit
+                    opt = models.PollOption(
+                        poll_id=poll.id,
+                        book_id=b_cand.id
+                    )
+                    db.add(opt)
+                db.commit()
+                
+                # Give random user votes
+                db.refresh(poll)
+                for u in db_users:
+                    random_opt = random.choice(poll.options)
+                    vote = models.PollVote(
+                        option_id=random_opt.id,
+                        user_id=u.id
+                    )
+                    db.add(vote)
+
+    # Seed Achievements
+    achievements_defaults = [
+        {
+            "title": "Перші кроки",
+            "description": "Додати першу книгу у власний літературний щоденник",
+            "icon_name": "BookOpen",
+            "criterion_type": "diary_added",
+            "target_value": 1
+        },
+        {
+            "title": "Книжковий черв'як",
+            "description": "Повністю прочитати 5 або більше книг",
+            "icon_name": "Medal",
+            "criterion_type": "books_read",
+            "target_value": 5
+        },
+        {
+            "title": "Душа компанії",
+            "description": "Залишити 10 або більше коментарів в обговореннях",
+            "icon_name": "MessageSquare",
+            "criterion_type": "comments_posted",
+            "target_value": 10
+        },
+        {
+            "title": "Організатор",
+            "description": "Створити власний книжковий клуб та очолити його",
+            "icon_name": "Trophy",
+            "criterion_type": "clubs_created",
+            "target_value": 1
+        },
+        {
+            "title": "Суперчитач",
+            "description": "Прочитати 25 книг!",
+            "icon_name": "Flame",
+            "criterion_type": "books_read",
+            "target_value": 25
+        }
+    ]
+
+    for ach_data in achievements_defaults:
+        exists = db.query(models.Achievement).filter(models.Achievement.title == ach_data["title"]).first()
+        if not exists:
+            ach = models.Achievement(**ach_data)
+            db.add(ach)
 
     db.commit()
     print("Seeding complete!")

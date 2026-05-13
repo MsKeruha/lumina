@@ -3,12 +3,16 @@ import { Users, Plus, ArrowRight, MessageSquare, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import Modal from '../components/Modal';
+import Toast from '../components/Toast';
+
 
 const ClubList = () => {
   const [clubs, setClubs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newClubData, setNewClubData] = useState({ name: '', description: '' });
+  const [toast, setToast] = useState({ message: '', type: 'success' });
   const { user } = useAuth();
 
   useEffect(() => {
@@ -17,47 +21,73 @@ const ClubList = () => {
       .then(data => setClubs(data));
   }, []);
 
-  const filteredClubs = clubs.filter(club => 
-    club.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    club.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Only show clubs that the logged in user IS NOT a member of
+  const filteredClubs = clubs
+    .filter(club => !user || !club.members?.some(m => m.id === user.id))
+    .filter(club => 
+      club.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      club.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   const handleJoin = async (clubId) => {
-    if (!user) return alert('Будь ласка, увійдіть, щоб приєднатися до клубу');
+    if (!user) {
+      setToast({ message: 'Будь ласка, увійдіть, щоб приєднатися до клубу', type: 'error' });
+      return;
+    }
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:8000/clubs/${clubId}/join`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) {
-      alert('Ви успішно приєдналися до клубу!');
-      window.location.reload();
+    try {
+      const res = await fetch(`http://localhost:8000/clubs/${clubId}/join`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setToast({ message: 'Ви успішно приєдналися до клубу!', type: 'success' });
+        // Refresh clubs local state to remove joined club
+        const clubsRes = await fetch('http://localhost:8000/clubs');
+        const clubsData = await clubsRes.json();
+        setClubs(clubsData);
+      } else {
+        setToast({ message: 'Не вдалося приєднатися до клубу', type: 'error' });
+      }
+    } catch (err) {
+      setToast({ message: 'Помилка мережі', type: 'error' });
     }
   };
 
   const handleCreateClub = async (e) => {
     e.preventDefault();
-    if (!user) return alert('Увійдіть, щоб створити клуб');
+    if (!user) {
+      setToast({ message: 'Увійдіть, щоб створити клуб', type: 'error' });
+      return;
+    }
     
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:8000/clubs`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(newClubData)
-    });
+    try {
+      const res = await fetch(`http://localhost:8000/clubs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newClubData)
+      });
 
-    if (res.ok) {
-      setShowCreateForm(false);
-      setNewClubData({ name: '', description: '' });
-      // Refresh clubs
-      const clubsRes = await fetch('http://localhost:8000/clubs');
-      const clubsData = await clubsRes.json();
-      setClubs(clubsData);
+      if (res.ok) {
+        setShowCreateForm(false);
+        setNewClubData({ name: '', description: '' });
+        setToast({ message: 'Клуб успішно створено!', type: 'success' });
+        // Refresh clubs
+        const clubsRes = await fetch('http://localhost:8000/clubs');
+        const clubsData = await clubsRes.json();
+        setClubs(clubsData);
+      } else {
+        setToast({ message: 'Помилка при створенні клубу', type: 'error' });
+      }
+    } catch (err) {
+      setToast({ message: 'Помилка мережі', type: 'error' });
     }
   };
+
 
   return (
     <div className="content-section">
@@ -77,46 +107,54 @@ const ClubList = () => {
               style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.6rem 1rem 0.6rem 2.5rem', color: 'white', outline: 'none' }}
             />
           </div>
-          <button onClick={() => setShowCreateForm(!showCreateForm)} className="btn-primary">
-            {showCreateForm ? 'Скасувати' : <><Plus size={20} /> Створити Клуб</>}
+          <button onClick={() => setShowCreateForm(true)} className="btn-primary">
+            <Plus size={20} /> Створити Клуб
           </button>
+
         </div>
       </div>
 
-      {showCreateForm && (
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass" 
-          style={{ padding: '2rem', marginBottom: '2rem' }}
-        >
-          <h3 style={{ marginBottom: '1.5rem' }}>Створити новий клуб</h3>
-          <form onSubmit={handleCreateClub} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div className="input-group">
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Назва клубу</label>
-              <input 
-                type="text"
-                value={newClubData.name}
-                onChange={(e) => setNewClubData({...newClubData, name: e.target.value})}
-                placeholder="Наприклад: 'Клуб фанатів фентезі'"
-                style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.75rem 1rem', color: 'white' }}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Опис</label>
-              <textarea 
-                value={newClubData.description}
-                onChange={(e) => setNewClubData({...newClubData, description: e.target.value})}
-                placeholder="Розкажіть, про що ваш клуб..."
-                style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.75rem 1rem', color: 'white', minHeight: '100px' }}
-                required
-              />
-            </div>
-            <button type="submit" className="btn-primary" style={{ alignSelf: 'flex-start' }}>Створити</button>
-          </form>
-        </motion.div>
-      )}
+      {/* Modal for Creating Club */}
+      <Modal
+        isOpen={showCreateForm}
+        onClose={() => setShowCreateForm(false)}
+        title="Створити новий клуб"
+      >
+        <form onSubmit={handleCreateClub} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="input-group">
+            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Назва клубу</label>
+            <input 
+              type="text"
+              value={newClubData.name}
+              onChange={(e) => setNewClubData({...newClubData, name: e.target.value})}
+              placeholder="Наприклад: 'Клуб фанатів фентезі'"
+              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.75rem 1rem', color: 'white', outline: 'none' }}
+              required
+            />
+          </div>
+          <div className="input-group">
+            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Опис</label>
+            <textarea 
+              value={newClubData.description}
+              onChange={(e) => setNewClubData({...newClubData, description: e.target.value})}
+              placeholder="Розкажіть, про що ваш клуб..."
+              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.75rem 1rem', color: 'white', minHeight: '100px', outline: 'none' }}
+              required
+            />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+            <button 
+              type="button"
+              onClick={() => setShowCreateForm(false)}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '12px', cursor: 'pointer' }}
+            >
+              Скасувати
+            </button>
+            <button type="submit" className="btn-primary">Створити</button>
+          </div>
+        </form>
+      </Modal>
+
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '2rem' }}>
         {filteredClubs.map((club, index) => (
@@ -149,10 +187,11 @@ const ClubList = () => {
                 onClick={() => handleJoin(club.id)}
                 className="btn-primary" 
                 style={{ flex: 1, justifyContent: 'center' }}
-                disabled={user && club.members?.some(m => m.id === user.id)}
               >
-                {user && club.members?.some(m => m.id === user.id) ? 'Ви учасник' : 'Приєднатися'}
+                Приєднатися
               </button>
+
+
               <Link to={`/clubs/${club.id}`} className="btn-primary" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', padding: '0.75rem' }}>
                 <ArrowRight size={20} />
               </Link>
@@ -160,7 +199,16 @@ const ClubList = () => {
           </motion.div>
         ))}
       </div>
+      {/* Toast Notification */}
+      {toast.message && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ ...toast, message: '' })} 
+        />
+      )}
     </div>
+
   );
 };
 

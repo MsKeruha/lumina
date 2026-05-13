@@ -12,6 +12,8 @@ import Community from './pages/Community';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import BookDetail from './pages/BookDetail';
+import AboutAlgorithms from './pages/AboutAlgorithms';
+import UserProfile from './pages/UserProfile';
 import { AuthProvider } from './context/AuthContext';
 import './index.css';
 
@@ -33,7 +35,9 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/users/:userId" element={<UserProfile />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/tech" element={<AboutAlgorithms />} />
             </Routes>
           </main>
           
