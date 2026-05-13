@@ -16,7 +16,7 @@ const ClubList = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    fetch('http://localhost:8000/clubs')
+    fetch('/api/clubs')
       .then(res => res.json())
       .then(data => setClubs(data));
   }, []);
@@ -36,14 +36,14 @@ const ClubList = () => {
     }
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/clubs/${clubId}/join`, {
+      const res = await fetch(`/api/clubs/${clubId}/join`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         setToast({ message: 'Ви успішно приєдналися до клубу!', type: 'success' });
         // Refresh clubs local state to remove joined club
-        const clubsRes = await fetch('http://localhost:8000/clubs');
+        const clubsRes = await fetch('/api/clubs');
         const clubsData = await clubsRes.json();
         setClubs(clubsData);
       } else {
@@ -63,7 +63,7 @@ const ClubList = () => {
     
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/clubs`, {
+      const res = await fetch(`/api/clubs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ const ClubList = () => {
         setNewClubData({ name: '', description: '' });
         setToast({ message: 'Клуб успішно створено!', type: 'success' });
         // Refresh clubs
-        const clubsRes = await fetch('http://localhost:8000/clubs');
+        const clubsRes = await fetch('/api/clubs');
         const clubsData = await clubsRes.json();
         setClubs(clubsData);
       } else {

@@ -25,7 +25,7 @@ const BookDetail = () => {
     window.scrollTo(0, 0);
     setLoading(true);
 
-    fetch(`http://localhost:8000/books/${bookId}`)
+    fetch(`/api/books/${bookId}`)
       .then(res => res.json())
       .then(data => {
         setBook(data);
@@ -36,12 +36,12 @@ const BookDetail = () => {
         setLoading(false);
       });
 
-    fetch(`http://localhost:8000/books/${bookId}/discussions`)
+    fetch(`/api/books/${bookId}/discussions`)
       .then(res => res.json())
       .then(data => setDiscussions(data))
       .catch(err => console.error(err));
 
-    fetch(`http://localhost:8000/books/${bookId}/recommendations`)
+    fetch(`/api/books/${bookId}/recommendations`)
       .then(res => res.json())
       .then(data => setRecommendations(data))
       .catch(err => console.error(err));
@@ -54,7 +54,7 @@ const BookDetail = () => {
     }
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/users/me/diary', {
+      const res = await fetch('/api/users/me/diary', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

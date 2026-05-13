@@ -18,7 +18,7 @@ const MyClubs = () => {
     if (!clubToLeave) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/clubs/${clubToLeave.id}/leave`, {
+      const res = await fetch(`/api/clubs/${clubToLeave.id}/leave`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -39,7 +39,7 @@ const MyClubs = () => {
   useEffect(() => {
     if (user) {
       const token = localStorage.getItem('token');
-      fetch('http://localhost:8000/users/me/clubs', {
+      fetch('/api/users/me/clubs', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.json())

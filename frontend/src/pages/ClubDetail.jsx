@@ -33,24 +33,24 @@ const ClubDetail = () => {
     fetchClubDetails();
     fetchPollDetails();
     
-    fetch(`http://localhost:8000/clubs/${clubId}/discussions`)
+    fetch(`/api/clubs/${clubId}/discussions`)
       .then(res => res.json())
       .then(data => setDiscussions(data));
 
-    fetch('http://localhost:8000/books')
+    fetch('/api/books')
       .then(res => res.json())
       .then(data => setBooks(data));
   }, [clubId]);
 
   const fetchClubDetails = () => {
-    fetch(`http://localhost:8000/clubs/${clubId}`)
+    fetch(`/api/clubs/${clubId}`)
       .then(res => res.json())
       .then(data => setClub(data));
   };
 
   const fetchPollDetails = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/clubs/${clubId}/polls`);
+      const res = await fetch(`/api/clubs/${clubId}/polls`);
       if (res.ok) {
         const data = await res.json();
         setPoll(data); // Can be null if no active polls
@@ -67,7 +67,7 @@ const ClubDetail = () => {
     }
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/clubs/polls/vote/${optionId}`, {
+      const res = await fetch(`/api/clubs/polls/vote/${optionId}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -91,7 +91,7 @@ const ClubDetail = () => {
     }
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/clubs/${clubId}/polls`, {
+      const res = await fetch(`/api/clubs/${clubId}/polls`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -134,7 +134,7 @@ const ClubDetail = () => {
     }
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/clubs/${clubId}/join`, {
+      const res = await fetch(`/api/clubs/${clubId}/join`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -152,7 +152,7 @@ const ClubDetail = () => {
   const handleConfirmLeave = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/clubs/${clubId}/leave`, {
+      const res = await fetch(`/api/clubs/${clubId}/leave`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -172,7 +172,7 @@ const ClubDetail = () => {
   const handleConfirmDeleteClub = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/clubs/${clubId}`, {
+      const res = await fetch(`/api/clubs/${clubId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -201,7 +201,7 @@ const ClubDetail = () => {
     }
     
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:8000/clubs/${clubId}/discussions`, {
+    const res = await fetch(`/api/clubs/${clubId}/discussions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -220,7 +220,7 @@ const ClubDetail = () => {
       setNewDiscData({ topic: '', book_id: '' });
       setToast({ message: 'Тему обговорення успішно створено!', type: 'success' });
       // Refresh discussions
-      const discRes = await fetch(`http://localhost:8000/clubs/${clubId}/discussions`);
+      const discRes = await fetch(`/api/clubs/${clubId}/discussions`);
       const discData = await discRes.json();
       setDiscussions(discData);
     } else {
@@ -237,7 +237,7 @@ const ClubDetail = () => {
     if (!content) return;
 
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:8000/discussions/${discussionId}/comments`, {
+    const res = await fetch(`/api/discussions/${discussionId}/comments`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -249,7 +249,7 @@ const ClubDetail = () => {
     if (res.ok) {
       setNewComment({ ...newComment, [discussionId]: '' });
       // Refresh discussions to show new comment
-      const discRes = await fetch(`http://localhost:8000/clubs/${clubId}/discussions`);
+      const discRes = await fetch(`/api/clubs/${clubId}/discussions`);
       const discData = await discRes.json();
       setDiscussions(discData);
     } else {

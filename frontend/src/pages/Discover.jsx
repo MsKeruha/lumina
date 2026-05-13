@@ -24,7 +24,7 @@ const Discover = () => {
     const fetchBooks = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:8000/books?q=${search}${category ? `&cat=${category}` : ''}`);
+        const res = await fetch(`/api/books?q=${search}${category ? `&cat=${category}` : ''}`);
         const data = await res.json();
         setBooks(data);
       } catch (err) {

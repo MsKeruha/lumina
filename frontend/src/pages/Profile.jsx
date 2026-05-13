@@ -40,7 +40,7 @@ const Profile = () => {
   const fetchDiary = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/users/me/diary', {
+      const res = await fetch('/api/users/me/diary', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -57,7 +57,7 @@ const Profile = () => {
   const fetchChallenge = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/users/me/challenge', {
+      const res = await fetch('/api/users/me/challenge', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -73,7 +73,7 @@ const Profile = () => {
   const fetchAchievements = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/users/me/achievements', {
+      const res = await fetch('/api/users/me/achievements', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -90,7 +90,7 @@ const Profile = () => {
     if (!editingItem) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/users/me/diary/${editingItem.id}/progress`, {
+      const res = await fetch(`/api/users/me/diary/${editingItem.id}/progress`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ const Profile = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/users/me/challenge', {
+      const res = await fetch('/api/users/me/challenge', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -136,7 +136,7 @@ const Profile = () => {
   const handleRemoveFromDiary = async (bookId) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/users/me/diary/${bookId}`, {
+      const res = await fetch(`/api/users/me/diary/${bookId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

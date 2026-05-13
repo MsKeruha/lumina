@@ -15,7 +15,7 @@ const UserProfile = () => {
     const fetchPublicProfile = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:8000/users/${userId}/profile`);
+        const res = await fetch(`/api/users/${userId}/profile`);
         if (res.ok) {
           const data = await res.json();
           setProfileData(data);

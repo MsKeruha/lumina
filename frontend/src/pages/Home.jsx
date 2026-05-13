@@ -17,7 +17,7 @@ const Home = () => {
 
   useEffect(() => {
     // Fetch from FastAPI backend
-    fetch('http://localhost:8000/books')
+    fetch('/api/books')
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {

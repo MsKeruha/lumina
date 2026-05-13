@@ -73,7 +73,7 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/admin/stats', {
+      const res = await fetch('/api/admin/stats', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -91,7 +91,7 @@ const AdminDashboard = () => {
     setLoadingBooks(true);
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/admin/books?skip=${page * limit}&limit=${limit}`, {
+      const res = await fetch(`/api/admin/books?skip=${page * limit}&limit=${limit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -109,7 +109,7 @@ const AdminDashboard = () => {
     setLoadingClubs(true);
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/admin/clubs', {
+      const res = await fetch('/api/admin/clubs', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -127,7 +127,7 @@ const AdminDashboard = () => {
     setLoadingAchievements(true);
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/admin/achievements', {
+      const res = await fetch('/api/admin/achievements', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -146,7 +146,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/admin/books', {
+      const res = await fetch('/api/admin/books', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ const AdminDashboard = () => {
     if (!bookToDelete) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/admin/books/${bookToDelete.id}`, {
+      const res = await fetch(`/api/admin/books/${bookToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -193,7 +193,7 @@ const AdminDashboard = () => {
     if (!clubToDelete) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/admin/clubs/${clubToDelete.id}`, {
+      const res = await fetch(`/api/admin/clubs/${clubToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -214,7 +214,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/admin/achievements', {
+      const res = await fetch('/api/admin/achievements', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -246,7 +246,7 @@ const AdminDashboard = () => {
     if (!achToDelete) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:8000/admin/achievements/${achToDelete.id}`, {
+      const res = await fetch(`/api/admin/achievements/${achToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
