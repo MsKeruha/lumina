@@ -24,7 +24,6 @@ const BookDetail = () => {
     // Scroll to top when opening a new book from recommendations
     window.scrollTo(0, 0);
     setLoading(true);
-
     fetch(`/api/books/${bookId}`)
       .then(res => res.json())
       .then(data => {

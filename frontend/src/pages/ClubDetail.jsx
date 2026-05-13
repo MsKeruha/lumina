@@ -32,7 +32,6 @@ const ClubDetail = () => {
   useEffect(() => {
     fetchClubDetails();
     fetchPollDetails();
-    
     fetch(`/api/clubs/${clubId}/discussions`)
       .then(res => res.json())
       .then(data => setDiscussions(data));
